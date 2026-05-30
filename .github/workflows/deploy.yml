@@ -1,5 +1,4 @@
-// 通过 workflow 部署到 GitHub Pages
-// 在 Settings > Pages 里选这个 action
+# Deploy to GitHub Pages
 name: Deploy to GitHub Pages
 
 on:
