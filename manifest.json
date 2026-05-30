@@ -1,0 +1,19 @@
+{
+  "name": "在家·物品地图",
+  "short_name": "物品地图",
+  "description": "给家里的每件物品找个位置，全家一起找东西不迷路",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#faf6f0",
+  "theme_color": "#faf6f0",
+  "orientation": "portrait-primary",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

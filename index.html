@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="theme-color" id="themeColor" content="#faf6f0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="在家·物品地图" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="manifest" href="manifest.json" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>🏠 在家 · 物品地图</title>
+<style>
+/* ===== 主题变量 ===== */
+:root {
+  --bg: #faf6f0;
+  --card-bg: #fffbf5;
+  --card-shadow: rgba(180,140,100,0.08);
+  --card-hover-shadow: rgba(180,140,100,0.18);
+  --text: #4a3728;
+  --text-secondary: #8a7a6a;
+  --accent: #e88965;
+  --accent-light: #fef0e8;
+  --accent-gradient: linear-gradient(135deg, #e88965 0%, #d4a56a 100%);
+  --border: #ece3d8;
+  --border-hover: #e88965;
+  --grid-cell: #faf3ea;
+  --grid-cell-hover: #fef0e8;
+  --grid-dashed: #e0d5c8;
+  --tag-bg: #fffbf5;
+  --tag-shadow: rgba(180,140,100,0.12);
+  --bar-bg: linear-gradient(135deg, #e88965 0%, #c98b5a 100%);
+  --bar-shadow: rgba(232,137,101,0.35);
+  --search-bg: #fffbf5;
+  --search-border: #ece3d8;
+  --search-focus: #e88965;
+  --hint-bg: #fff3e0;
+  --hint-text: #bf6f3a;
+  --modal-overlay: rgba(60,40,20,0.35);
+  --modal-bg: #fffbf5;
+  --cell-empty-hover: #fef0e8;
+  --btn-primary-bg: #e88965;
+  --btn-primary-hover: #d47a58;
+  --btn-outline-color: #e88965;
+  --hover-tip-bg: #fef0e8;
+  --hover-tip-text: #bf6f3a;
+  --hover-tip-success-bg: #f0f5e8;
+  --hover-tip-success-text: #5a8040;
+}
+
+/* ===== 暗夜主题 ===== */
+body.night {
+  --bg: linear-gradient(135deg, #0d0a1a 0%, #1a1030 30%, #0f1420 70%, #080c14 100%);
+  --card-bg: rgba(255,255,255,0.06);
+  --card-shadow: rgba(0,0,0,0.3);
+  --card-hover-shadow: rgba(100,80,180,0.25);
+  --text: #e8e0f0;
+  --text-secondary: #9080a8;
+  --accent: #9b7de0;
+  --accent-light: rgba(155,125,224,0.12);
+  --accent-gradient: linear-gradient(135deg, #9b7de0 0%, #6b5bcc 100%);
+  --border: rgba(155,125,224,0.2);
+  --border-hover: #9b7de0;
+  --grid-cell: rgba(255,255,255,0.04);
+  --grid-cell-hover: rgba(155,125,224,0.1);
+  --grid-dashed: rgba(155,125,224,0.2);
+  --tag-bg: rgba(255,255,255,0.08);
+  --tag-shadow: rgba(0,0,0,0.25);
+  --bar-bg: linear-gradient(135deg, #2a1a4a 0%, #1a1030 100%);
+  --bar-shadow: rgba(100,60,180,0.3);
+  --search-bg: rgba(255,255,255,0.06);
+  --search-border: rgba(155,125,224,0.25);
+  --search-focus: #9b7de0;
+  --hint-bg: rgba(155,125,224,0.12);
+  --hint-text: #b8a0e8;
+  --modal-overlay: rgba(0,0,0,0.55);
+  --modal-bg: #1a1430;
+  --cell-empty-hover: rgba(155,125,224,0.08);
+  --btn-primary-bg: #9b7de0;
+  --btn-primary-hover: #8a6ccf;
+  --btn-outline-color: #9b7de0;
+  --hover-tip-bg: rgba(155,125,224,0.15);
+  --hover-tip-text: #c0a8e8;
+  --hover-tip-success-bg: rgba(100,180,120,0.15);
+  --hover-tip-success-text: #80c888;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.5s, color 0.3s;
+}
+
+/* ===== 顶部浮动滚动条 ===== */
+.floating-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--bar-bg);
+  padding: 8px 0;
+  box-shadow: 0 4px 20px var(--bar-shadow);
+  overflow: hidden;
+  height: 56px;
+  transition: background 0.5s;
+}
+.floating-track {
+  display: flex;
+  gap: 12px;
+  animation: scrollLeft 20s linear infinite;
+  white-space: nowrap;
+  padding: 0 8px;
+}
+.floating-track:hover { animation-play-state: paused; }
+@keyframes scrollLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.item-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--tag-bg);
+  border-radius: 100px;
+  padding: 6px 16px 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: 0 2px 8px var(--tag-shadow);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.3s;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+}
+.item-tag:active { cursor: grabbing; transform: scale(0.95); }
+.item-tag .icon { font-size: 16px; }
+.item-tag .close {
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.item-tag .close:hover { background: rgba(0,0,0,0.08); color: var(--text); }
+.item-tag.dragging { opacity: 0.5; transform: scale(0.9); }
+
+/* ===== 空状态提示 ===== */
+.empty-hint {
+  position: fixed; top: 56px; left: 0; right: 0;
+  background: var(--hint-bg);
+  color: var(--hint-text);
+  text-align: center;
+  padding: 6px;
+  font-size: 13px;
+  z-index: 999;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.5s, color 0.3s;
+}
+
+/* ===== 主体 ===== */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 80px 16px 100px;
+}
+
+/* ===== 头部 ===== */
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px;
+}
+.header h1 { font-size: 22px; font-weight: 700; }
+.header .actions { display: flex; gap: 8px; }
+.btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--btn-primary-bg); color: #fff; }
+.btn-primary:hover { background: var(--btn-primary-hover); }
+.btn-outline { background: transparent; color: var(--btn-outline-color); border: 1.5px solid var(--btn-outline-color); }
+.btn-outline:hover { background: var(--accent-light); }
+.btn-theme {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  font-size: 18px;
+  padding: 6px 12px;
+}
+
+/* ===== 搜索栏 ===== */
+.search-bar {
+  display: flex; gap: 8px;
+  margin-bottom: 18px;
+}
+.search-bar input {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--search-border);
+  background: var(--search-bg);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border 0.15s, background 0.3s;
+}
+.search-bar input:focus { border-color: var(--search-focus); }
+.search-bar input::placeholder { color: var(--text-secondary); }
+
+/* ===== 房间网格 ===== */
+.section-title {
+  font-size: 15px; font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.room-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  padding: 18px 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px var(--card-shadow);
+  cursor: pointer;
+  transition: all 0.2s, background 0.3s;
+  border: 2px solid transparent;
+  position: relative;
+  backdrop-filter: blur(2px);
+}
+.room-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px var(--card-hover-shadow); }
+.room-card.active { border-color: var(--accent); background: var(--accent-light); }
+.room-card.drag-hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px var(--card-hover-shadow);
+}
+.room-card .room-icon { font-size: 28px; margin-bottom: 6px; }
+.room-card .room-name { font-size: 13px; font-weight: 500; }
+.room-card .room-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+.room-card .hover-tip {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hover-tip-bg);
+  color: var(--hover-tip-text);
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  animation: fadeIn 0.2s;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+}
+.room-card .hover-tip.success {
+  background: var(--hover-tip-success-bg);
+  color: var(--hover-tip-success-text);
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== 房间详情 ===== */
+.room-detail {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 12px var(--card-shadow);
+  margin-bottom: 20px;
+  animation: slideDown 0.25s ease;
+  backdrop-filter: blur(2px);
+  transition: background 0.3s;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.room-detail-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px;
+}
+.room-detail-header h2 { font-size: 18px; }
+.room-detail-header .back {
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: var(--accent-light);
+}
+
+/* ===== 格子 ===== */
+.grid-map {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.grid-cell {
+  aspect-ratio: 1;
+  background: var(--grid-cell);
+  border: 2px dashed var(--grid-dashed);
+  border-radius: 10px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s, background 0.3s;
+  position: relative;
+  min-height: 80px;
+  overflow: visible;
+}
+.grid-cell:hover { border-color: var(--border-hover); background: var(--cell-empty-hover); }
+.grid-cell.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+.grid-cell .cell-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-secondary);
+  position: absolute; top: 4px; left: 6px;
+}
+.grid-cell .cell-item {
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  word-break: break-all;
+}
+.grid-cell .cell-item .emoji { font-size: 22px; display: block; margin-bottom: 2px; }
+.grid-cell.full { border-style: solid; border-color: var(--border); background: var(--card-bg); }
+.grid-cell .remove-item {
+  position: absolute; top: 2px; right: 4px;
+  font-size: 12px; color: var(--text-secondary);
+  cursor: pointer;
+  background: var(--card-bg);
+  border-radius: 50%;
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s;
+  z-index: 10;
+}
+.grid-cell:hover .remove-item { opacity: 1; }
+.grid-cell .remove-item:hover { color: #d46050; background: rgba(212,96,80,0.12); }
+
+/* ===== 底部新增按钮 ===== */
+.add-btn {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 56px; height: 56px;
+  border-radius: 28px;
+  background: var(--accent-gradient);
+  color: #fff;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px var(--bar-shadow);
+  transition: transform 0.15s, background 0.5s;
+  z-index: 100;
+}
+.add-btn:hover { transform: scale(1.1); }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--modal-overlay);
+  z-index: 2000;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--modal-bg);
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  transition: background 0.3s;
+}
+.modal h3 { font-size: 18px; margin-bottom: 16px; }
+.modal label { font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.modal input, .modal select {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  outline: none;
+  background: var(--search-bg);
+  color: var(--text);
+  transition: border 0.15s, background 0.3s;
+}
+.modal input:focus, .modal select:focus { border-color: var(--search-focus); }
+.modal .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.modal .modal-actions button { padding: 10px 20px; border-radius: 12px; border: none; font-size: 14px; cursor: pointer; }
+.modal .btn-cancel { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
+.modal .btn-confirm { background: var(--btn-primary-bg); color: #fff; }
+.modal .btn-confirm:hover { background: var(--btn-primary-hover); }
+
+@media (max-width: 480px) {
+  .room-grid { gap: 8px; }
+  .room-card { padding: 14px 6px; }
+  .grid-map { gap: 6px; }
+  .grid-cell { min-height: 64px; }
+  .container { padding: 72px 12px 90px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 浮动滚动条 ===== -->
+<div class="floating-bar" id="floatingBar" style="display:none;">
+  <div class="floating-track" id="floatingTrack"></div>
+</div>
+<div class="empty-hint" id="emptyHint">💡 把拿出来的物品拖到房间卡片上，停留1秒展开格子</div>
+
+<!-- ===== 主界面 ===== -->
+<div class="container" id="app">
+  <div class="header">
+    <h1>🏠 我的家</h1>
+    <div class="actions">
+      <button class="btn btn-theme" onclick="toggleTheme()" id="themeBtn" title="切换昼夜主题">🌙</button>
+      <button class="btn btn-outline" onclick="shareToFamily()">👨‍👩‍👧 分享</button>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" placeholder="🔍 搜物品，高亮所在房间..." id="searchInput" oninput="searchItems()">
+  </div>
+
+  <div class="section-title">📌 房间 · 共<span id="totalItems">0</span>件物品</div>
+  <div class="room-grid" id="roomGrid"></div>
+
+  <div id="roomDetailWrap" style="display:none;">
+    <div class="room-detail" id="roomDetail">
+      <div class="room-detail-header">
+        <h2 id="detailRoomName">储物间</h2>
+        <span class="back" onclick="closeRoomDetail()">← 收起</span>
+      </div>
+      <div class="grid-map" id="gridMap"></div>
+    </div>
+  </div>
+</div>
+
+<button class="add-btn" onclick="openAddModal()" title="新增物品">＋</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>📦 新增物品</h3>
+    <label>物品名称</label>
+    <input type="text" id="newItemName" placeholder="例：螺丝刀套装" />
+    <label>所属房间</label>
+    <select id="newItemRoom"></select>
+    <label>格子编号</label>
+    <select id="newItemCell"></select>
+    <label>图标（选填）</label>
+    <input type="text" id="newItemIcon" placeholder="🔧" />
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddModal()">取消</button>
+      <button class="btn-confirm" onclick="confirmAdd()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const rooms = [
+  { id: 'entrance', name: '玄关', icon: '🚪' },
+  { id: 'living', name: '客厅', icon: '🛋️' },
+  { id: 'balcony', name: '阳台', icon: '🌿' },
+  { id: 'kitchen', name: '厨房', icon: '🍳' },
+  { id: 'hallway', name: '走廊', icon: '🚶' },
+  { id: 'bathroom', name: '卫生间', icon: '🚿' },
+  { id: 'bedroom2', name: '次卧', icon: '🛌' },
+  { id: 'bedroom1', name: '主卧', icon: '🛏️' },
+  { id: 'storage', name: '储物间', icon: '📦' },
+];
+const cellLabels = ['A1','A2','A3','A4','B1','B2','B3','B4','C1','C2','C3','C4','D1','D2','D3','D4'];
+
+let storage = {};
+let floatingItems = [
+  { id: 'f1', name: '充电宝', icon: '🔋' },
+  { id: 'f2', name: '扳手', icon: '🔧' },
+  { id: 'f3', name: '蓝牙耳机', icon: '🎧' },
+  { id: 'f4', name: '新买的台灯', icon: '💡' },
+];
+let currentRoom = null;
+let draggedItemData = null;
+let isNight = false;
+
+function init() {
+  storage['storage'] = {
+    'A1': { name: '工具箱', icon: '🔧' },
+    'A2': { name: '露营灯', icon: '💡' },
+    'B1': { name: '网线', icon: '🔌' },
+    'B2': { name: '创可贴', icon: '🩹' },
+    'C1': { name: '鞋盒×3', icon: '📦' },
+  };
+  storage['kitchen'] = {
+    'A1': { name: '炒锅', icon: '🍳' },
+    'B2': { name: '调味架', icon: '🧂' },
+  };
+  storage['living'] = {
+    'A2': { name: '遥控器', icon: '📺' },
+    'B3': { name: '指甲刀', icon: '✂️' },
+  };
+  renderRooms();
+  renderFloatingBar();
+}
+
+// ===== 主题切换 =====
+function toggleTheme() {
+  isNight = !isNight;
+  document.body.classList.toggle('night', isNight);
+  document.getElementById('themeBtn').textContent = isNight ? '☀️' : '🌙';
+}
+
+// ===== 房间网格 =====
+function renderRooms() {
+  const grid = document.getElementById('roomGrid');
+  grid.innerHTML = '';
+  let total = 0;
+  rooms.forEach(r => {
+    const count = storage[r.id] ? Object.keys(storage[r.id]).length : 0;
+    total += count;
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    card.dataset.roomId = r.id;
+    card.innerHTML = `
+      <div class="room-icon">${r.icon}</div>
+      <div class="room-name">${r.name}</div>
+      <div class="room-count">${count} 件</div>
+    `;
+    card.onclick = () => openRoomDetail(r);
+
+    let roomHoverTimer = null;
+    card.ondragover = (e) => {
+      e.preventDefault();
+      card.classList.add('drag-hover');
+      if (!card.querySelector('.hover-tip')) {
+        const tip = document.createElement('div');
+        tip.className = 'hover-tip';
+        tip.textContent = '⏳ 停留1秒展开';
+        card.appendChild(tip);
+      }
+      if (roomHoverTimer) clearTimeout(roomHoverTimer);
+      roomHoverTimer = setTimeout(() => {
+        openRoomDetail(r);
+        const tip = card.querySelector('.hover-tip');
+        if (tip) { tip.textContent = '✅ 已展开，拖到格子上'; tip.classList.add('success'); }
+      }, 1000);
+    };
+    card.ondragleave = () => {
+      card.classList.remove('drag-hover');
+      if (roomHoverTimer) { clearTimeout(roomHoverTimer); roomHoverTimer = null; }
+      const tip = card.querySelector('.hover-tip');
+      if (tip) tip.remove();
+    };
+    card.ondrop = (e) => {
+      e.preventDefault();
+      card.classList.remove('drag-hover');
+      if (roomHoverTimer) { clearTimeout(roomHoverTimer); roomHoverTimer = null; }
+      const tip = card.querySelector('.hover-tip');
+      if (tip) tip.remove();
+    };
+
+    grid.appendChild(card);
+  });
+  document.getElementById('totalItems').textContent = total;
+}
+
+// ===== 浮动滚动条 =====
+function renderFloatingBar() {
+  const bar = document.getElementById('floatingBar');
+  const track = document.getElementById('floatingTrack');
+  track.innerHTML = '';
+  if (floatingItems.length === 0) {
+    bar.style.display = 'none';
+    document.getElementById('emptyHint').style.display = 'block';
+    return;
+  }
+  bar.style.display = 'block';
+  document.getElementById('emptyHint').style.display = 'none';
+
+  const items = [...floatingItems, ...floatingItems];
+  items.forEach(item => {
+    const tag = document.createElement('span');
+    tag.className = 'item-tag';
+    tag.draggable = true;
+    tag.dataset.id = item.id;
+    tag.innerHTML = `<span class="icon">${item.icon}</span>${item.name}<span class="close" onclick="event.stopPropagation();removeFloating('${item.id}')">✕</span>`;
+    tag.ondragstart = (e) => {
+      draggedItemData = { name: item.name, icon: item.icon, id: item.id };
+      e.dataTransfer.setData('text/plain', JSON.stringify(draggedItemData));
+      tag.classList.add('dragging');
+    };
+    tag.ondragend = () => { tag.classList.remove('dragging'); };
+    track.appendChild(tag);
+  });
+}
+
+function removeFloating(id) {
+  floatingItems = floatingItems.filter(f => f.id !== id);
+  renderFloatingBar();
+}
+
+function addToFloating(name, icon) {
+  floatingItems.push({ id: 'f' + Date.now(), name, icon: icon || '📦' });
+  renderFloatingBar();
+}
+
+// ===== 房间详情 =====
+function openRoomDetail(room) {
+  if (currentRoom && currentRoom.id === room.id) return;
+  currentRoom = room;
+  document.getElementById('roomDetailWrap').style.display = 'block';
+  document.getElementById('detailRoomName').textContent = room.icon + ' ' + room.name;
+  renderGrid(room);
+  document.querySelectorAll('.room-card').forEach((c, i) => {
+    c.classList.toggle('active', i < rooms.length && rooms[i].id === room.id);
+  });
+  setTimeout(() => {
+    document.getElementById('roomDetailWrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function closeRoomDetail() {
+  document.getElementById('roomDetailWrap').style.display = 'none';
+  currentRoom = null;
+  document.querySelectorAll('.room-card').forEach(c => c.classList.remove('active'));
+}
+
+function renderGrid(room) {
+  const map = document.getElementById('gridMap');
+  map.innerHTML = '';
+  const data = storage[room.id] || {};
+  cellLabels.forEach(label => {
+    const cell = document.createElement('div');
+    const item = data[label];
+    cell.className = 'grid-cell' + (item ? ' full' : '');
+    cell.dataset.cell = label;
+    if (item) {
+      cell.innerHTML = `
+        <span class="cell-label">${label}</span>
+        <div class="cell-item"><span class="emoji">${item.icon}</span>${item.name}</div>
+        <span class="remove-item" onclick="event.stopPropagation();removeItem('${room.id}','${label}')">✕</span>`;
+    } else {
+      cell.innerHTML = `<span class="cell-label">${label}</span>`;
+    }
+
+    cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); };
+    cell.ondragleave = () => { cell.classList.remove('drag-over'); };
+    cell.ondrop = (e) => {
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      const itemData = draggedItemData || (() => { try { return JSON.parse(e.dataTransfer.getData('text/plain')); } catch(e) { return null; } })();
+      if (!itemData) return;
+      if (!storage[room.id]) storage[room.id] = {};
+      storage[room.id][label] = { name: itemData.name, icon: itemData.icon || '📦' };
+      floatingItems = floatingItems.filter(f => f.id !== itemData.id);
+      draggedItemData = null;
+      renderGrid(room);
+      renderFloatingBar();
+      updateRoomCards();
+    };
+    if (!item) {
+      cell.onclick = () => {
+        const name = prompt('物品名称：');
+        if (name && name.trim()) {
+          if (!storage[room.id]) storage[room.id] = {};
+          storage[room.id][label] = { name: name.trim(), icon: '📦' };
+          renderGrid(room);
+          updateRoomCards();
+        }
+      };
+    }
+    map.appendChild(cell);
+  });
+}
+
+function removeItem(roomId, label) {
+  if (!confirm('确定移出这件物品？')) return;
+  if (storage[roomId]) {
+    delete storage[roomId][label];
+    if (Object.keys(storage[roomId]).length === 0) delete storage[roomId];
+  }
+  renderGrid(currentRoom);
+  updateRoomCards();
+}
+
+function updateRoomCards() {
+  let total = 0;
+  document.querySelectorAll('.room-card').forEach((card, i) => {
+    if (i < rooms.length) {
+      const r = rooms[i];
+      const count = storage[r.id] ? Object.keys(storage[r.id]).length : 0;
+      total += count;
+      card.querySelector('.room-count').textContent = count + ' 件';
+    }
+  });
+  document.getElementById('totalItems').textContent = total;
+}
+
+// ===== 搜索 =====
+function searchItems() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  document.querySelectorAll('.room-card').forEach((card, i) => {
+    if (i < rooms.length) {
+      const r = rooms[i];
+      const data = storage[r.id] || {};
+      let found = false;
+      if (q) {
+        for (let k in data) {
+          if (data[k].name.toLowerCase().includes(q)) { found = true; break; }
+        }
+      }
+      card.style.background = found ? 'var(--accent-light)' : '';
+      card.style.borderColor = found ? 'var(--accent)' : '';
+    }
+  });
+}
+
+// ===== 新增 Modal =====
+function openAddModal() {
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('newItemName').value = '';
+  document.getElementById('newItemIcon').value = '';
+  const roomSelect = document.getElementById('newItemRoom');
+  roomSelect.innerHTML = '';
+  rooms.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id; opt.textContent = r.icon + ' ' + r.name;
+    roomSelect.appendChild(opt);
+  });
+  if (currentRoom) roomSelect.value = currentRoom.id;
+  updateCellSelect();
+  roomSelect.onchange = updateCellSelect;
+}
+
+function updateCellSelect() {
+  const roomId = document.getElementById('newItemRoom').value;
+  const data = storage[roomId] || {};
+  const cellSelect = document.getElementById('newItemCell');
+  cellSelect.innerHTML = '';
+  cellLabels.forEach(label => {
+    if (!data[label]) {
+      const opt = document.createElement('option');
+      opt.value = label; opt.textContent = label;
+      cellSelect.appendChild(opt);
+    }
+  });
+}
+
+function closeAddModal() { document.getElementById('modal').classList.remove('show'); }
+
+function confirmAdd() {
+  const name = document.getElementById('newItemName').value.trim();
+  const roomId = document.getElementById('newItemRoom').value;
+  const cell = document.getElementById('newItemCell').value;
+  const icon = document.getElementById('newItemIcon').value.trim() || '📦';
+  if (!name) { alert('请输入物品名称'); return; }
+  if (!storage[roomId]) storage[roomId] = {};
+  storage[roomId][cell] = { name, icon };
+  addToFloating(name, icon);
+  closeAddModal();
+  if (currentRoom && currentRoom.id === roomId) renderGrid(currentRoom);
+  updateRoomCards();
+}
+
+function shareToFamily() {
+  alert('👨‍👩‍👧 分享给家人\n\n生成家庭邀请链接中...\n(小程序正式版中可一键分享到微信)');
+}
+
+init();
+</script>
+<div class="offline-banner" id="offlineBanner" style="display:none;">📡 当前离线，数据仅保存在本地</div>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+window.addEventListener('online', () => {
+  document.getElementById('offlineBanner').style.display = 'none';
+});
+window.addEventListener('offline', () => {
+  document.getElementById('offlineBanner').style.display = 'block';
+});
+const SK = '##';
+function saveToLocal() {
+  try { localStorage.setItem(SK, JSON.stringify({storage,floatingItems})); } catch(e) {}
+}
+function loadFromLocal() {
+  try {
+    const r = localStorage.getItem(SK);
+    if (r) { const d = JSON.parse(r); if(d.storage) storage = d.storage; if(d.floatingItems) floatingItems = d.floatingItems; }
+  } catch(e) {}
+}
+function persistAnd(fn) { fn(); saveToLocal(); renderAll(); }
+function renderAll() { renderRooms(); renderFloatingBar(); if (currentRoom) renderGrid(currentRoom); }
+</script>
+</body>
+</html>
